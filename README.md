@@ -2,20 +2,11 @@
 ![Version](https://img.shields.io/badge/version-0.0.0-blue.svg?cacheSeconds=2592000)
 [![Licence](https://img.shields.io/badge/license-boost-4480cc.png)](http://www.boost.org/LICENSE_1_0.txt)
 
-> 
+> A C++ library that maps the macOS API into C++
 
 ## Building
-Requirements for Windows
-- [git](https://git-scm.com/)
-- [CMake](https://cmake.org/) 3.17.5 or newer
-- [Visual Studio 2019](https://visualstudio.microsoft.com/vs/)
-
-1. `git clone --recurse-submodules https://github.com/Link1J/TNAE.git`
-2. `cd TNAE`
-3. `mkdir build`
-4. `cd build`
-5. `cmake ..`
-6. `cmake --build .`
+I really don't know.
+But you will need a Mac.
 
 ## Contributing
 Please refer to our [Contributing Guide](CONTRIBUTING.md) for more details.
