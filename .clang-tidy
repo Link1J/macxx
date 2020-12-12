@@ -1,0 +1,6 @@
+---
+Checks: 'clang-diagnostic-*,clang-analyzer-*,modernize-*,readability-*,-modernize-use-trailing-return-type,-readability-magic-numbers'
+WarningsAsErrors: true
+HeaderFilterRegex: ''
+AnalyzeTemporaryDtors: false
+FormatStyle: file
