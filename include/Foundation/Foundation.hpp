@@ -4,5 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "NSString.hpp"
+
+#include "NSObject.hpp"
 #include "NSProcessInfo.hpp"
+#include "NSString.hpp"

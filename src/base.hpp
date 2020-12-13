@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <type_traits>
+#include <vector>
 
 extern "C" void*       objc_msgSend(void* self, const char* _cmd, ...);
 extern "C" void*       objc_alloc(void* clazz);

@@ -94,4 +94,5 @@ public:
     void performExpiringActivityWithReason(NSString reason, std::function<void(void* block, bool expired)> block);
 };
 
+#undef DEPRECTED_T
 #undef DEPRECTED

@@ -6,27 +6,9 @@
 cmake_minimum_required(VERSION 3.17.0)
 project(macxx VERSION 0.0.0)
 
-add_library(core SHARED
-    src/id.cpp
-    src/NSObject.cpp
-)
-set_target_properties(core
-    PROPERTIES
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-)
-target_include_directories(core
-    PUBLIC
-        "include"
-    PRIVATE
-        "src"
-)
-target_link_libraries(core
-    PRIVATE
-        objc
-)
 add_library(Foundation SHARED
+    src/id.cpp
+    src/Foundation/NSObject.cpp
     src/Foundation/NSString.cpp
     src/Foundation/NSProcessInfo.cpp
 )
@@ -37,12 +19,12 @@ set_target_properties(Foundation
         CXX_EXTENSIONS NO
 )
 target_include_directories(Foundation
+    PUBLIC
+        "include"
     PRIVATE
         "src"
 )
 target_link_libraries(Foundation
-    PUBLIC
-        core
     PRIVATE
         objc
         "-framework Foundation"
