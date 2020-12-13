@@ -16,6 +16,8 @@ protected:
     static id alloc(const char* s);
 
 public:
+    id _get_id();
+
     NSObject(id data);
 
     static NSObject alloc();
