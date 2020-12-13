@@ -24,13 +24,7 @@ template<typename R, typename... A>
 R objc_send_msg(id self, std::string cmd, A... args)
 {
     auto _cmd = sel_getUid(cmd.c_str());
-    if constexpr (std::is_pod_v<R>)
-    {
-        R return_value;
-        objc_msgSend_stret(&return_value, self._get_abi(), _cmd, args...);
-        return return_value;
-    }
-    else if constexpr (std::is_floating_point_v<R>)
+    if constexpr (std::is_floating_point_v<R>)
     {
         return ((R(*)(void*, const char*, A...))(objc_msgSend_fpret))(self._get_abi(), _cmd, args...);
     }
@@ -38,8 +32,22 @@ R objc_send_msg(id self, std::string cmd, A... args)
     {
         return ((R(*)(void*, const char*, A...))(objc_msgSend))(self._get_abi(), _cmd, args...);
     }
-    else
+    else if constexpr (std::is_void_v<R>)
+    {
+        ((R(*)(void*, const char*, A...))(objc_msgSend))(self._get_abi(), _cmd, args...);
+    }
+    else if constexpr (std::is_constructible_v<R, id>)
     {
         return id{objc_msgSend(self._get_abi(), _cmd, args...)};
+    }
+    else if constexpr (std::is_pod_v<R>)
+    {
+        R return_value;
+        objc_msgSend_stret(&return_value, self._get_abi(), _cmd, args...);
+        return return_value;
+    }
+    else
+    {
+        static_assert(!sizeof(std::decay_t<R>*), "Invalid return type");
     }
 }
