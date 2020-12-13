@@ -57,6 +57,11 @@ id NSObject::mutableCopy()
     return id{objc_msgSend(data._get_abi(), sel_getUid("mutableCopy"))};
 }
 
+id NSObject::_get_id()
+{
+    return data;
+}
+
 // These Two Functions are here on purpose, do not move them to NSString
 
 NSString::NSString(id data)
