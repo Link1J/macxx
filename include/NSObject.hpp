@@ -23,10 +23,11 @@ public:
     static NSObject alloc();
     static id       clazz();
 
-    id init();
-    id clasz();
-    id copy();
-    id mutableCopy();
+    id   init();
+    id   clasz();
+    id   copy();
+    id   mutableCopy();
+    void dealloc();
 
     NSString description() const;
 };

@@ -18,10 +18,10 @@ id NSString::clazz()
 
 id NSString::initWithUTF8String(const char* nullterminatedCString)
 {
-    return id{objc_msgSend(data._get_abi(), sel_getUid("initWithUTF8String:"), nullterminatedCString)};
+    return objc_send_msg<id>(data, "initWithUTF8String:", nullterminatedCString);
 }
 
 id NSString::initWithBytes(const void* bytes, unsigned long length, NSStringEncoding encoding)
 {
-    return id{objc_msgSend(data._get_abi(), sel_getUid("initWithBytes:length:encoding:"), bytes, length, encoding)};
+    return objc_send_msg<id>(data, "initWithBytes:length:encoding:", bytes, length, encoding);
 }

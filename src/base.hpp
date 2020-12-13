@@ -21,14 +21,17 @@ extern "C" void        objc_msgSend_stret(void* stretAddr, void* self, const cha
 extern "C" double      objc_msgSend_fpret(void* self, const char* _cmd, ...);
 
 template<typename R, typename... A>
-R objc_send_msg(id self, std::string cmd, A... args)
+std::enable_if_t<std::is_floating_point_v<R> || std::is_integral_v<R> || std::is_pointer_v<R> || std::is_void_v<R> ||
+                     std::is_constructible_v<R, id> || std::is_pod_v<R>,
+                 R>
+objc_send_msg(id self, std::string cmd, A... args)
 {
     auto _cmd = sel_getUid(cmd.c_str());
     if constexpr (std::is_floating_point_v<R>)
     {
         return ((R(*)(void*, const char*, A...))(objc_msgSend_fpret))(self._get_abi(), _cmd, args...);
     }
-    else if constexpr (std::is_integral_v<R>)
+    else if constexpr (std::is_integral_v<R> || std::is_pointer_v<R>)
     {
         return ((R(*)(void*, const char*, A...))(objc_msgSend))(self._get_abi(), _cmd, args...);
     }

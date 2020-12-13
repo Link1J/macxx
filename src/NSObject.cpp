@@ -9,7 +9,7 @@
 
 id NSObject::alloc(const char* s)
 {
-    return id{objc_msgSend(objc_getClass(s), sel_getUid("alloc"))};
+    return objc_send_msg<id>(id{objc_getClass(s)}, "alloc");
 }
 
 NSObject NSObject::alloc()
@@ -33,12 +33,12 @@ NSObject::NSObject(id data)
 
 id NSObject::init()
 {
-    return id{objc_msgSend(data._get_abi(), sel_getUid("init"))};
+    return objc_send_msg<id>(data, "init");
 }
 
 NSString NSObject::description() const
 {
-    return id{objc_msgSend(data._get_abi(), sel_getUid("description"))};
+    return objc_send_msg<id>(data, "description");
 }
 
 std::basic_ostream<char, std::char_traits<char>>& operator<<(std::basic_ostream<char, std::char_traits<char>>& os,
@@ -49,17 +49,22 @@ std::basic_ostream<char, std::char_traits<char>>& operator<<(std::basic_ostream<
 
 id NSObject::copy()
 {
-    return id{objc_msgSend(data._get_abi(), sel_getUid("copy"))};
+    return objc_send_msg<id>(data, "copy");
 }
 
 id NSObject::mutableCopy()
 {
-    return id{objc_msgSend(data._get_abi(), sel_getUid("mutableCopy"))};
+    return objc_send_msg<id>(data, "mutableCopy");
 }
 
 id NSObject::_get_id()
 {
     return data;
+}
+
+void NSObject::dealloc()
+{
+    objc_send_msg<void>(data, "dealloc");
 }
 
 // These Two Functions are here on purpose, do not move them to NSString
@@ -70,5 +75,5 @@ NSString::NSString(id data)
 
 const char* NSString::cStringUsingEncoding(NSStringEncoding encoding) const
 {
-    return (const char*)objc_msgSend(data._get_abi(), sel_getUid("cStringUsingEncoding:"), encoding);
+    return objc_send_msg<const char*>(data, "cStringUsingEncoding:", encoding);
 }
