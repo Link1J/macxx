@@ -6,6 +6,7 @@
 #pragma once
 #include "NSObject.hpp"
 #include "NSString.hpp"
+#include <api.hpp>
 #include <functional>
 
 namespace macxx
@@ -80,16 +81,15 @@ namespace macxx
         auto enableSuddenTermination();
         auto disableAutomaticTermination(NSString reason);
         auto enableAutomaticTermination(NSString reason);
-        MACXX_DEPRECTED
-        auto operatingSystem();
-        MACXX_DEPRECTED
-        auto operatingSystemName();
         auto isOperatingSystemAtLeastVersion(NSOperatingSystemVersion version);
         auto beginActivityWithOptions(NSActivityOptions options, NSString reason);
         auto endActivity(id<> activity);
         auto performActivityWithOptions(NSActivityOptions options, NSString reason,
                                         std::function<void(void* block)> block);
         auto performExpiringActivityWithReason(NSString reason, std::function<void(void* block, BOOL expired)> block);
+
+        auto operatingSystem();
+        auto operatingSystemName();
     };
 
     static_assert(sizeof(NSProcessInfo) == sizeof(id<>));

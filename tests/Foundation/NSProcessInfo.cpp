@@ -6,6 +6,10 @@
 #include <Foundation/Foundation.hpp>
 #include <catch2/catch.hpp>
 
+#define STR(X) #X
+#define XSTR(X) STR(X)
+#pragma message XSTR(_ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED_)
+
 TEST_CASE("NSProcessInfo", "[Foundation][NSProcessInfo]")
 {
     auto info = macxx::NSProcessInfo::processInfo();
@@ -43,5 +47,9 @@ TEST_CASE("NSProcessInfo", "[Foundation][NSProcessInfo]")
     {
         auto version = info.operatingSystemVersion();
         REQUIRE(version.majorVersion > 9);
+    }
+    SECTION("operatingSystemVersion")
+    {
+        auto version = info.operatingSystem();
     }
 }

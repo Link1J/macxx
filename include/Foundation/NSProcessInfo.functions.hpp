@@ -75,16 +75,6 @@ namespace macxx
         objc_send_msg<void>(*this, "enableAutomaticTermination:", reason);
     }
 
-    auto NSProcessInfo::operatingSystem()
-    {
-        return objc_send_msg<unsigned long>(*this, "operatingSystem");
-    }
-
-    auto NSProcessInfo::operatingSystemName()
-    {
-        return objc_send_msg<NSString>(*this, "operatingSystemName");
-    }
-
     auto NSProcessInfo::isOperatingSystemAtLeastVersion(NSOperatingSystemVersion version)
     {
         return objc_send_msg<BOOL>(*this, "isOperatingSystemAtLeastVersion:", version);
@@ -94,6 +84,18 @@ namespace macxx
     {
         return objc_send_msg<NSString>(*this, "hostName");
     }
+
+#if MACXX_API_DEPRECTED_FROM(__MAC_10_10, __IPHONE_8_0, __MAC_13_0, __TVOS_9_0, __WATCHOS_2_0)
+    auto NSProcessInfo::operatingSystem()
+    {
+        return objc_send_msg<unsigned long>(*this, "operatingSystem");
+    }
+
+    auto NSProcessInfo::operatingSystemName()
+    {
+        return objc_send_msg<NSString>(*this, "operatingSystemName");
+    }
+#endif
 
     auto NSProcessInfo::operatingSystemVersionString()
     {
