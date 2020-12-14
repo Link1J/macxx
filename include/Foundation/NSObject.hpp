@@ -4,33 +4,62 @@
 // (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "id.hpp"
+#include "base.hpp"
 
-class NSString;
-
-class NSObject
+namespace macxx
 {
-protected:
-    id data;
+    struct NSString;
 
-    static id alloc(const char* s);
+    struct NSObjectProtocol : public Protocol
+    {
+        auto description() const;
+        auto hash() const;
+        auto superclass() const;
 
-public:
-    id _get_id();
+        auto clasz() const;
+    };
 
-    NSObject(id data);
+    auto NSObjectProtocol::hash() const
+    {
+        return objc_send_msg<NSUInteger>(*this, "hash");
+    }
 
-    static NSObject alloc();
-    static id       clazz();
+    auto NSObjectProtocol::superclass() const
+    {
+        return objc_send_msg<Class>(*this, "superclass");
+    }
 
-    id   init();
-    id   clasz();
-    id   copy();
-    id   mutableCopy();
-    void dealloc();
+    auto NSObjectProtocol::clasz() const
+    {
+        return objc_send_msg<Class>(*this, "clasz");
+    }
 
-    NSString description() const;
-};
+    template<typename... A>
+    struct NSObject : public id<NSObjectProtocol, A...>
+    {
+        using super = id<NSObjectProtocol, A...>;
 
-std::basic_ostream<char, std::char_traits<char>>& operator<<(std::basic_ostream<char, std::char_traits<char>>& os,
-                                                             const NSObject&                                   object);
+        NSObject()
+            : NSObject(get_class<NSObject>())
+        {
+            this->set_abi(objc_send_msg<abi::id>(*this, "init"));
+        }
+
+        ~NSObject()
+        {
+            //objc_send_msg<void>(*this, "release");
+            //this->set_abi(nullptr);
+        }
+
+    protected:
+        NSObject(Class clazz)
+        {
+            this->set_abi(alloc<abi::id>(clazz));
+        }
+    };
+} // namespace macxx
+
+bool operator==(const macxx::NSObjectProtocol& lhs, const macxx::NSObjectProtocol& rhs)
+{
+    return macxx::objc_send_msg<bool>(lhs, "isEqual:", rhs);
+}

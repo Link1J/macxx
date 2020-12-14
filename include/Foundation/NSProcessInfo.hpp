@@ -8,91 +8,229 @@
 #include "NSString.hpp"
 #include <functional>
 
-// For making clang-format play nice
-#define DEPRECTED_T(x) [[deprecated(x)]]
-#define DEPRECTED [[deprecated]]
-
-struct NSOperatingSystemVersion
+namespace macxx
 {
-    unsigned long majorVersion;
-    unsigned long minorVersion;
-    unsigned long patchVersion;
-};
+    struct NSOperatingSystemVersion
+    {
+        unsigned long majorVersion;
+        unsigned long minorVersion;
+        unsigned long patchVersion;
+    };
 
-enum NSProcessInfoThermalState
-{
-    NSProcessInfoThermalStateNominal,
-    NSProcessInfoThermalStateFair,
-    NSProcessInfoThermalStateSerious,
-    NSProcessInfoThermalStateCritical,
-};
+    enum NSProcessInfoThermalState
+    {
+        NSProcessInfoThermalStateNominal,
+        NSProcessInfoThermalStateFair,
+        NSProcessInfoThermalStateSerious,
+        NSProcessInfoThermalStateCritical,
+    };
 
-enum
-{
-    NSWindowsNTOperatingSystem DEPRECTED = 1,
-    NSWindows95OperatingSystem DEPRECTED,
-    NSSolarisOperatingSystem   DEPRECTED,
-    NSHPUXOperatingSystem      DEPRECTED,
-    NSMACHOperatingSystem      DEPRECTED,
-    NSSunOSOperatingSystem     DEPRECTED,
-    NSOSF1OperatingSystem      DEPRECTED
-};
+    enum
+    {
+        NSWindowsNTOperatingSystem MACXX_DEPRECTED = 1,
+        NSWindows95OperatingSystem MACXX_DEPRECTED,
+        NSSolarisOperatingSystem   MACXX_DEPRECTED,
+        NSHPUXOperatingSystem      MACXX_DEPRECTED,
+        NSMACHOperatingSystem      MACXX_DEPRECTED,
+        NSSunOSOperatingSystem     MACXX_DEPRECTED,
+        NSOSF1OperatingSystem      MACXX_DEPRECTED
+    };
 
-enum NSActivityOptions : uint64_t
-{
-    NSActivityIdleDisplaySleepDisabled             = (1ULL << 40),
-    NSActivityIdleSystemSleepDisabled              = (1ULL << 20),
-    NSActivitySuddenTerminationDisabled            = (1ULL << 14),
-    NSActivityAutomaticTerminationDisabled         = (1ULL << 15),
-    NSActivityUserInitiated                        = (0x00FFFFFFULL | NSActivityIdleSystemSleepDisabled),
-    NSActivityUserInitiatedAllowingIdleSystemSleep = (NSActivityUserInitiated & ~NSActivityIdleSystemSleepDisabled),
-    NSActivityBackground                           = 0x000000FFULL,
-    NSActivityLatencyCritical                      = 0xFF00000000ULL,
-};
+    enum NSActivityOptions : uint64_t
+    {
+        NSActivityIdleDisplaySleepDisabled             = (1ULL << 40),
+        NSActivityIdleSystemSleepDisabled              = (1ULL << 20),
+        NSActivitySuddenTerminationDisabled            = (1ULL << 14),
+        NSActivityAutomaticTerminationDisabled         = (1ULL << 15),
+        NSActivityUserInitiated                        = (0x00FFFFFFULL | NSActivityIdleSystemSleepDisabled),
+        NSActivityUserInitiatedAllowingIdleSystemSleep = (NSActivityUserInitiated & ~NSActivityIdleSystemSleepDisabled),
+        NSActivityBackground                           = 0x000000FFULL,
+        NSActivityLatencyCritical                      = 0xFF00000000ULL,
+    };
 
-class NSProcessInfo : public NSObject
-{
-public:
-    NSProcessInfo(id data);
+    using NSTimeInterval = double;
 
-    static NSProcessInfo alloc();
-    static id            clazz();
-    static NSProcessInfo processInfo();
+    struct NSProcessInfo : public NSObject<>
+    {
+        NSProcessInfo() = delete;
 
-    // NSArray arguments();
-    // NSDictionary environment();
-    NSString                  processName();
-    int                       processIdentifier();
-    bool                      iOSAppOnMac();
-    bool                      macCatalystApp();
-    NSString                  globallyUniqueString();
-    NSString                  userName();
-    NSString                  fullUserName();
-    bool                      automaticTerminationSupportEnabled();
-    NSString                  hostName();
-    NSString                  operatingSystemVersionString();
-    NSOperatingSystemVersion  operatingSystemVersion();
-    unsigned long             processorCount();
-    unsigned long             activeProcessorCount();
-    unsigned long long        physicalMemory();
-    double                    systemUptime();
-    NSProcessInfoThermalState thermalState();
-    bool                      lowPowerModeEnabled();
+        static auto processInfo();
 
-    void disableSuddenTermination();
-    void enableSuddenTermination();
-    void disableAutomaticTermination(NSString reason);
-    void enableAutomaticTermination(NSString reason);
-    DEPRECTED_T("Use operatingSystemVersion or isOperatingSystemAtLeastVersion: instead")
-    unsigned long operatingSystem();
-    DEPRECTED_T("Use operatingSystemVersionString instead.")
-    NSString operatingSystemName();
-    bool     isOperatingSystemAtLeastVersion(NSOperatingSystemVersion version);
-    id       beginActivityWithOptions(NSActivityOptions options, NSString reason);
-    void     endActivity(id activity);
-    void performActivityWithOptions(NSActivityOptions options, NSString reason, std::function<void(void* block)> block);
-    void performExpiringActivityWithReason(NSString reason, std::function<void(void* block, bool expired)> block);
-};
+        // auto arguments();
+        // auto environment();
+        auto processName();
+        auto processIdentifier();
+        auto iOSAppOnMac();
+        auto macCatalystApp();
+        auto globallyUniqueString();
+        auto userName();
+        auto fullUserName();
+        auto automaticTerminationSupportEnabled();
+        auto hostName();
+        auto operatingSystemVersionString();
+        auto operatingSystemVersion();
+        auto processorCount();
+        auto activeProcessorCount();
+        auto physicalMemory();
+        auto systemUptime();
+        auto thermalState();
+        auto lowPowerModeEnabled();
 
-#undef DEPRECTED_T
-#undef DEPRECTED
+        auto disableSuddenTermination();
+        auto enableSuddenTermination();
+        auto disableAutomaticTermination(NSString reason);
+        auto enableAutomaticTermination(NSString reason);
+        MACXX_DEPRECTED
+        auto operatingSystem();
+        MACXX_DEPRECTED
+        auto operatingSystemName();
+        auto isOperatingSystemAtLeastVersion(NSOperatingSystemVersion version);
+        auto beginActivityWithOptions(NSActivityOptions options, NSString reason);
+        auto endActivity(id<> activity);
+        auto performActivityWithOptions(NSActivityOptions options, NSString reason,
+                                        std::function<void(void* block)> block);
+        auto performExpiringActivityWithReason(NSString reason, std::function<void(void* block, BOOL expired)> block);
+    };
+
+    static_assert(sizeof(NSProcessInfo) == sizeof(id<>));
+
+    auto NSProcessInfo::processInfo()
+    {
+        auto clazz = get_class<NSProcessInfo>();
+        return objc_send_msg<NSProcessInfo>(clazz, "processInfo");
+    }
+
+    auto NSProcessInfo::processName()
+    {
+        return objc_send_msg<NSString>(*this, "processName");
+    }
+
+    auto NSProcessInfo::processIdentifier()
+    {
+        return objc_send_msg<NSInteger>(*this, "processIdentifier");
+    }
+
+    auto NSProcessInfo::iOSAppOnMac()
+    {
+        return objc_send_msg<BOOL>(*this, "isiOSAppOnMac");
+    }
+
+    auto NSProcessInfo::macCatalystApp()
+    {
+        return objc_send_msg<BOOL>(*this, "isMacCatalystApp");
+    }
+
+    auto NSProcessInfo::globallyUniqueString()
+    {
+        return objc_send_msg<NSString>(*this, "globallyUniqueString");
+    }
+
+    auto NSProcessInfo::userName()
+    {
+        return objc_send_msg<NSString>(*this, "userName");
+    }
+
+    auto NSProcessInfo::fullUserName()
+    {
+        return objc_send_msg<NSString>(*this, "fullUserName");
+    }
+
+    auto NSProcessInfo::automaticTerminationSupportEnabled()
+    {
+        return objc_send_msg<BOOL>(*this, "automaticTerminationSupportEnabled");
+    }
+
+    auto NSProcessInfo::disableSuddenTermination()
+    {
+        return objc_send_msg<void>(*this, "disableSuddenTermination");
+    }
+
+    auto NSProcessInfo::enableSuddenTermination()
+    {
+        return objc_send_msg<void>(*this, "enableSuddenTermination");
+    }
+
+    auto NSProcessInfo::disableAutomaticTermination(NSString reason)
+    {
+        objc_send_msg<void>(*this, "disableAutomaticTermination:", reason);
+    }
+
+    auto NSProcessInfo::enableAutomaticTermination(NSString reason)
+    {
+        objc_send_msg<void>(*this, "enableAutomaticTermination:", reason);
+    }
+
+    auto NSProcessInfo::operatingSystem()
+    {
+        return objc_send_msg<unsigned long>(*this, "operatingSystem");
+    }
+
+    auto NSProcessInfo::operatingSystemName()
+    {
+        return objc_send_msg<NSString>(*this, "operatingSystemName");
+    }
+
+    auto NSProcessInfo::isOperatingSystemAtLeastVersion(NSOperatingSystemVersion version)
+    {
+        return objc_send_msg<BOOL>(*this, "isOperatingSystemAtLeastVersion:", version);
+    }
+
+    auto NSProcessInfo::hostName()
+    {
+        return objc_send_msg<NSString>(*this, "hostName");
+    }
+
+    auto NSProcessInfo::operatingSystemVersionString()
+    {
+        return objc_send_msg<NSString>(*this, "operatingSystemVersionString");
+    }
+
+    auto NSProcessInfo::operatingSystemVersion()
+    {
+        return objc_send_msg<NSOperatingSystemVersion>(*this, "operatingSystemVersion");
+    }
+
+    auto NSProcessInfo::processorCount()
+    {
+        return objc_send_msg<NSUInteger>(*this, "processorCount");
+    }
+
+    auto NSProcessInfo::activeProcessorCount()
+    {
+        return objc_send_msg<NSUInteger>(*this, "activeProcessorCount");
+    }
+
+    auto NSProcessInfo::physicalMemory()
+    {
+        return objc_send_msg<unsigned long long>(*this, "physicalMemory");
+    }
+
+    auto NSProcessInfo::systemUptime()
+    {
+        return objc_send_msg<NSTimeInterval>(*this, "systemUptime");
+    }
+
+    auto NSProcessInfo::beginActivityWithOptions(NSActivityOptions options, NSString reason)
+    {
+        return objc_send_msg<id<>>(*this, "beginActivityWithOptions:reason:", options, reason);
+    }
+
+    auto NSProcessInfo::endActivity(id<> activity)
+    {
+        objc_send_msg<void>(*this, "endActivity:", activity);
+    }
+
+    auto NSProcessInfo::performActivityWithOptions(NSActivityOptions options, NSString reason,
+                                                   std::function<void(void* block)> block)
+    {
+        objc_send_msg<void>(*this, "performActivityWithOptions:reason:usingBlock:", options, reason,
+                            block.target<int (*)(void* block)>());
+    }
+
+    auto NSProcessInfo::performExpiringActivityWithReason(NSString                                       reason,
+                                                          std::function<void(void* block, BOOL expired)> block)
+    {
+        objc_send_msg<void>(*this, "performExpiringActivityWithReason:usingBlock:", reason,
+                            block.target<int (*)(void* block, BOOL expired)>());
+    }
+} // namespace macxx
