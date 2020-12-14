@@ -33,13 +33,25 @@ namespace macxx
 
 namespace macxx
 {
+    namespace detail
+    {
+        template<class T, class U>
+        concept SameHelper = std::is_same_v<T, U>;
+    }
+
+    template<class T, class U>
+    concept same_as = detail::SameHelper<T, U>&& detail::SameHelper<U, T>;
+
     struct Protocol
     {};
 
     template<class T>
-    concept _has_abi = requires
+    concept _has_abi = requires(T a)
     {
-        std::declval<T>().__get_abi();
+        // clang-format off
+        a.__get_abi();
+        { static_cast<bool>(a) } -> same_as<bool>;
+        // clang-format on
     };
 
     template<class T>
@@ -64,7 +76,7 @@ namespace macxx
     template<typename T>
     struct _id_impl
     {
-        operator T()
+        operator T() const
         {
             return *(T*)this;
         }
@@ -87,6 +99,11 @@ namespace macxx
         constexpr id(const T& other)
             : _id{other.__get_abi()}
         {}
+
+        operator bool() const
+        {
+            return _id != nullptr;
+        }
 
         constexpr auto __get_abi() const
         {
@@ -127,6 +144,11 @@ namespace macxx
             return _id;
         }
 
+        operator bool()
+        {
+            return _id != nullptr;
+        }
+
     private:
         std::string_view name;
         abi::SEL         _id;
@@ -142,6 +164,11 @@ namespace macxx
         constexpr auto __get_abi() const
         {
             return _id;
+        }
+
+        operator bool()
+        {
+            return _id != nullptr;
         }
 
     private:
