@@ -5,6 +5,6 @@
 
 #pragma once
 
-#include "NSObject.hpp"
-#include "NSProcessInfo.hpp"
-#include "NSString.hpp"
+#include "NSObject.functions.hpp"
+#include "NSProcessInfo.functions.hpp"
+#include "NSString.functions.hpp"

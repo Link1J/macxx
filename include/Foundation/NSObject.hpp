@@ -15,51 +15,30 @@ namespace macxx
         auto description() const;
         auto hash() const;
         auto superclass() const;
-
         auto clasz() const;
     };
 
-    auto NSObjectProtocol::hash() const
+    template<typename T>
+    struct NSCopying : public Protocol
     {
-        return objc_send_msg<NSUInteger>(*this, "hash");
-    }
+        const auto copy() const;
+    };
 
-    auto NSObjectProtocol::superclass() const
+    template<typename T>
+    struct NSMutableCopying : public Protocol
     {
-        return objc_send_msg<Class>(*this, "superclass");
-    }
-
-    auto NSObjectProtocol::clasz() const
-    {
-        return objc_send_msg<Class>(*this, "clasz");
-    }
+        auto mutableCopy();
+    };
 
     template<typename... A>
     struct NSObject : public id<NSObjectProtocol, A...>
     {
         using super = id<NSObjectProtocol, A...>;
 
-        NSObject()
-            : NSObject(get_class<NSObject>())
-        {
-            this->set_abi(objc_send_msg<abi::id>(*this, "init"));
-        }
-
-        ~NSObject()
-        {
-            //objc_send_msg<void>(*this, "release");
-            //this->set_abi(nullptr);
-        }
+        NSObject();
+        ~NSObject();
 
     protected:
-        NSObject(Class clazz)
-        {
-            this->set_abi(alloc<abi::id>(clazz));
-        }
+        NSObject(Class clazz);
     };
 } // namespace macxx
-
-bool operator==(const macxx::NSObjectProtocol& lhs, const macxx::NSObjectProtocol& rhs)
-{
-    return macxx::objc_send_msg<bool>(lhs, "isEqual:", rhs);
-}
