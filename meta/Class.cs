@@ -8,16 +8,19 @@ using System.Collections.Generic;
 
 namespace meta
 {
-	public class Protocol
+	public class Class
 	{
 		public string name;
+		public string baseClass;
+		public bool protocol;
 		public List<string> protocols = new List<string>();
 		public List<Method> methods = new List<Method>();
 		public List<Property> properties = new List<Property>();
 
-		public Protocol(string name)
+		public Class(string name, bool protocol)
 		{
 			this.name = name;
+			this.protocol = protocol;
 		}
 	}
 }

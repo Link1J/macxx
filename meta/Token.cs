@@ -12,7 +12,7 @@ namespace meta
 		string file;
 		int start;
 		int length;
-		Parser parser;
+		public Parser parser;
 		Lazy<Token> _next;
 		Token _last;
 

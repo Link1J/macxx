@@ -12,6 +12,8 @@ using System.Runtime.InteropServices;
 // using System.Reflection.Metadata;
 // using System.Reflection.PortableExecutable;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace meta
 {
@@ -169,20 +171,6 @@ namespace meta
 		}
 	}*/
 
-	enum Mode
-	{
-		Global,
-		Preprocessor,
-		ObjectiveC,
-		ObjC_Refs,
-		ObjC_Class,
-		ObjC_Implementation,
-		Block,
-		ObjC_Protocol,
-		ObjC_Details,
-		ObjC_Method,
-	}
-
 	class Program
 	{
 		static void Main(string[] args)
@@ -190,49 +178,28 @@ namespace meta
 			var macosSDK = "R:/MacOS/MacOS SDK/MacOSX10.15.sdk";
 
 			var reader = new Reader();
-			reader.Run(new Parser(macosSDK + "/System/Library/Frameworks/Foundation.framework/Headers/NSObject.h"));
-			reader.Run(new Parser(macosSDK + "/System/Library/Frameworks/Foundation.framework/Headers/NSString.h"));
 
-			Console.WriteLine($"Enums:");
-			reader.enums.ForEach(x =>
+			foreach (var framework in Directory.GetDirectories(macosSDK + @"/System/Library/Frameworks"))
 			{
-				Console.WriteLine($"\t{x.name}");
-				x.members.ForEach(y =>
+				if (!Directory.Exists(framework + @"/Headers"))
+					continue;
+
+				var nameStart = framework.LastIndexOfAny(new char[]{'/', '\\'}) + 1;
+				var name = framework.Substring(nameStart, framework.LastIndexOf('.') - nameStart);
+				reader.AddFramework(name);
+				Console.WriteLine($"{name}");
+
+				foreach (var filePath in Directory.GetFiles(framework + @"/Headers", "*.h"))
 				{
-					Console.WriteLine($"\t\t{y}");
-				});
-			});
-			Console.WriteLine($"Protocols:");
-			reader.protocols.ForEach(x =>
-			{
-				Console.WriteLine($"\t{x.name}");
-				Console.WriteLine($"\t\tMethods:");
-				x.methods.ForEach(y =>
-				{
-					Console.WriteLine($"\t\t\t{y.fullName}, {y.staticMethod}");
-				});
-				Console.WriteLine($"\t\tProperties:");
-				x.properties.ForEach(y =>
-				{
-					Console.WriteLine($"\t\t\t{y.name}, {y.type}");
-				});
-			});
-			Console.WriteLine($"Interfaces:");
-			reader.interfaces.ForEach(x =>
-			{
-				var baseClass = x.baseClass != null ? ": " + x.baseClass : "";
-				Console.WriteLine($"\t{x.name} {baseClass}");
-				Console.WriteLine($"\t\tMethods:");
-				x.methods.ForEach(y =>
-				{
-					Console.WriteLine($"\t\t\t{y.fullName}, {y.staticMethod}");
-				});
-				Console.WriteLine($"\t\tProperties:");
-				x.properties.ForEach(y =>
-				{
-					Console.WriteLine($"\t\t\t{y.name}, {y.type}");
-				});
-			});
+					nameStart = filePath.LastIndexOfAny(new char[]{'/', '\\'}) + 1;
+					name = filePath.Substring(nameStart);
+					Console.WriteLine($"\t{name}");
+
+					reader.Run(new Parser(filePath));
+				}
+			}
+
+			new meta.Json.Serializer().Run(reader, "macos.json");
 		}
 	}
 }

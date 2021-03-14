@@ -11,6 +11,7 @@ namespace meta
 {
 	public class Parser : IEnumerable, IEnumerator
 	{
+		public string filename;
 		string text;
 		int position = 0;
 		Token last;
@@ -40,12 +41,16 @@ namespace meta
 				case '*':
 				case '#':
 				case '=':
+				case '"':
+				case '^':
 				case '(':
 				case ')':
 				case '[':
 				case ']':
 				case '<':
 				case '>':
+				case '{':
+				case '}':
 				case '\n':
 					return true;
 
@@ -55,6 +60,9 @@ namespace meta
 		}
 		bool isLetter()
 		{
+			if (AtEnd)
+				return false;
+
 			if (isSymbol())
 				return false;
 
@@ -121,6 +129,7 @@ namespace meta
 
 		public Parser(string filename)
 		{
+			this.filename = filename.Substring(filename.LastIndexOfAny(new char[]{'/', '\\'}) + 1);
 			text = File.ReadAllText(filename);
 		}
 
@@ -137,7 +146,7 @@ namespace meta
 			clearWhitespace();
 
 			last = current;
-			
+
 			if (position == text.Length)
 			{
 				current = new Token(this);

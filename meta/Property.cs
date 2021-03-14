@@ -12,17 +12,13 @@ namespace meta
 	{
 		public string type;
 		public string name;
-		
+
 		public bool staticProperty = false;
 		public bool read = true;
 		public bool write = true;
 
 		public string getter;
 		public string setter;
-
-		public Property()
-		{
-		}
 
 		public void SetName(string newName)
 		{

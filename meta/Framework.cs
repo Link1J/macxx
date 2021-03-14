@@ -8,15 +8,13 @@ using System.Collections.Generic;
 
 namespace meta
 {
-	public class Interface
+	public class Framework
 	{
 		public string name;
-		public string baseClass;
-		public List<string> protocols = new List<string>();
-		public List<Method> methods = new List<Method>();
-		public List<Property> properties = new List<Property>();
+		public List<Class> interfaces = new List<Class>();
+		public List<Enum> enums = new List<Enum>();
 
-		public Interface(string name)
+		public Framework(string name)
 		{
 			this.name = name;
 		}
