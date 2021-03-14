@@ -50,6 +50,9 @@ namespace macxx::abi
 
         _c_string class_getName(Class cls);
         Class     class_getSuperclass(Class cls);
+
+        void* _Block_copy(const void*);
+        void* _Block_release(const void*);
     }
 
 #if defined(_MACXX_ABI_DEBUG_INFO_)

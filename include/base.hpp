@@ -291,3 +291,83 @@ namespace macxx
         return alloc<T>(get_class<T>());
     }
 } // namespace macxx
+
+namespace macxx
+{
+    template<typename T>
+    struct Block;
+
+    template<typename R, typename... A>
+    struct Block<R(A...)>
+    {
+        constexpr auto __get_abi() const
+        {
+            return (abi::id)block;
+        }
+
+        operator bool()
+        {
+            return block != nullptr;
+        }
+
+        R operator()(A&&... args)
+        {
+            return block->invoke(block, std::forward<A>(args)...);
+        }
+
+        Block(std::function<R(A...)> function)
+        {
+            block = (literal*)malloc(sizeof(literal));
+            block->descriptor = (descriptor*)malloc(sizeof(descriptor));
+            
+            block->isa = abi::objc_getClass("__NSMallocBlock__");
+            block->invoke = &invoke;
+            block->data = function;
+            block->flags = BLOCK_NEEDS_FREE | BLOCK_HAS_COPY_DISPOSE | BLOCK_HAS_DISCRIPTOR | 1;
+
+            block->descriptor->size = sizeof(literal);
+            block->descriptor->copy = &copy;
+            block->descriptor->dispose = &dispose;
+        }
+
+    private:
+        enum {
+            BLOCK_REFCOUNT_MASK    = 0xFFFF,
+            BLOCK_NEEDS_FREE       = 1 << 24,
+            BLOCK_HAS_COPY_DISPOSE = 1 << 25,
+            BLOCK_HAS_DISCRIPTOR   = 1 << 29,
+        };
+
+        static R invoke(literal* _this, A... args)
+        {
+            return _this->data(std::forward<A>(args)...);
+        }
+
+        static void copy(literal* new_block, literal* old_block)
+        {
+            new_block->function = old_block->function;
+        }
+
+        static void dispose(literal* block)
+        {
+            new_block->function;
+        }
+        
+        struct literal;
+        struct descriptor {
+            unsigned long int reserved;
+            unsigned long int size;
+            void (*copy)(literal* dst, literal* src);
+            void (*dispose)(literal* src); 
+        };
+        struct literal {
+            void* isa;
+            int flags;
+            int reserved;
+            R (*invoke)(literal*, A...);
+            descriptor* descriptor;
+            std::function<R(A...)> data;
+        };
+        literal* block;
+    };
+} // namespace macxx
