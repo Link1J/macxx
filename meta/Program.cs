@@ -1,205 +1,195 @@
-﻿
-// Copyright Jared Irwin 2021
-// Distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
-
-using System;
+﻿using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-// using System.Reflection;
-// using System.Reflection.Metadata.Ecma335;
-// using System.Reflection.Metadata;
-// using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Linq;
+using ClangSharp;
+using ClangSharp.Interop;
 
 namespace meta
 {
-	/*
-	class Program
-	{
-		static void Main(string[] args)
-		{
-			var macosSDK = "R:/MacOS/MacOS SDK/MacOSX10.15.sdk";
+    class ParseAST
+    {
+        public static void Generate(TranslationUnitDecl cursor)
+        {
+            foreach (var item in cursor.CursorChildren)
+                Generate((dynamic)item);
+        }
+        static void Generate(ObjCInterfaceDecl cursor)
+        {
+            new Interface(cursor);
+        }
+        static void Generate(ObjCProtocolDecl cursor)
+        {
+            new Protocol(cursor);
+        }
+        static void Generate(ObjCCategoryDecl cursor)
+        {
+            new Category(cursor);
+        }
+        static void Generate(EnumDecl cursor)
+        {
+            new Enum(cursor);
+        }
+        static void Generate(FunctionDecl cursor)
+        {
+            new Function(cursor);
+        }
+        static void Generate(Cursor _)
+        {
+        }
+    }
 
-			var translationFlags = CXTranslationUnit_Flags.CXTranslationUnit_None;
-			translationFlags |= CXTranslationUnit_Flags.CXTranslationUnit_SkipFunctionBodies;
-			translationFlags |= CXTranslationUnit_Flags.CXTranslationUnit_IncludeAttributedTypes;
-			translationFlags |= CXTranslationUnit_Flags.CXTranslationUnit_VisitImplicitAttributes;
-			var clangCommandLineArgs = new string[]{
-				"-Wall", //"-Wno-pragma-once-outside-header",
-				"-x", "objective-c",
-				"-v",
-				"-fblocks",
-				"-target", "x86_64-apple-macosx10.15",
-				"-isysroot" + macosSDK,
-				"-isystem" + "C:/Program Files/LLVM/lib/clang/11.0.1/include",
-				};
+    class MFile : IDisposable
+    {
+        public MFile(string macosSDK)
+        {
+            var imports = "#import <objc/NSObject.h>\n";
+            var frameworksPath = macosSDK + "/System/Library/Frameworks/";
+            foreach (var dir in Directory.EnumerateDirectories(frameworksPath))
+            {
+                var name = dir[frameworksPath.Length..].Split('.', 2)[0];
+                if (!File.Exists(dir + $"/Headers/{name}.h"))
+                    continue;
+                imports += $"#import <{name}/{name}.h>\n";
+            }
+            File.WriteAllText("test.m", imports);
+        }
 
-			//foreach (var framework in Directory.GetDirectories(macosSDK + @"\System\Library\Frameworks"))
-			{
-				//foreach (var filePath in Directory.GetFiles(framework + @"\Headers", "*.h"))
-				{
-					var filePath = macosSDK + "/System/Library/Frameworks/Foundation.framework/Headers/NSObject.h";
+        public void Dispose()
+        {
+            File.Delete("test.m");
+        }
+    }
 
-					var IndexHandle = CXIndex.Create(false, true);
-					var unitError = CXTranslationUnit.TryParse(IndexHandle, filePath, clangCommandLineArgs, Array.Empty<CXUnsavedFile>(), translationFlags, out CXTranslationUnit handle);
-					var skipProcessing = false;
+    class Program
+    {
+        static readonly string macosSDK = @"R:\MacOS\MacOS SDK\MacOSX10.15.sdk";
+        static readonly string clangIncludes = @"C:\Program Files\LLVM\lib\clang\12.0.0\include";
+        static readonly string macosVersion = @"10.15.0";
 
-					if (unitError != CXErrorCode.CXError_Success)
-					{
-						Console.WriteLine($"Error: Parsing failed for '{filePath}' due to '{unitError}'.");
-						skipProcessing = true;
-					}
-					else if (handle.NumDiagnostics != 0)
-					{
-						Console.WriteLine($"Diagnostics for '{filePath}':");
+        static readonly string[] clang_command_args = {
+            "-target","x86_64-apple-macosx",
+            "-isysroot",
+            "-isystem",
+            "-fobjc-runtime=macosx-", "-fblocks",
+            "-Wall", "-Wno-unused-command-line-argument"
+        };
 
-						for (uint i = 0; i < handle.NumDiagnostics; ++i)
-						{
-							using var diagnostic = handle.GetDiagnostic(i);
+        static TranslationUnit TryParse(ClangSharp.Index index, string filename, ReadOnlySpan<string> args, CXTranslationUnit_Flags flags)
+        {
+            var error = CXTranslationUnit.TryParse(index.Handle, filename, args, Array.Empty<CXUnsavedFile>(), flags, out var handle);
+            if (error != CXErrorCode.CXError_Success)
+            {
+                Console.WriteLine($"Error: Parsing failed for '{filename}' due to '{error}'.");
+                throw new Exception();
+            }
+            return TranslationUnit.GetOrCreate(handle);
+        }
 
-							Console.Write("    ");
-							Console.WriteLine(diagnostic.Format(CXDiagnostic.DefaultDisplayOptions).ToString());
+        static readonly CXTranslationUnit_Flags clang_flags = CXTranslationUnit_Flags.CXTranslationUnit_VisitImplicitAttributes;
 
-							skipProcessing |= (diagnostic.Severity == CXDiagnosticSeverity.CXDiagnostic_Error);
-							skipProcessing |= (diagnostic.Severity == CXDiagnosticSeverity.CXDiagnostic_Fatal);
-						}
-					}
+        static TranslationUnit Parse()
+        {
+            using var _ = new MFile(macosSDK);
+            var index = ClangSharp.Index.Create(false, true);
+            return TryParse(index, "test.m", clang_command_args, clang_flags);
+        }
 
-					if (skipProcessing)
-					{
-						Console.WriteLine($"Skipping '{filePath}' due to one or more errors listed above.");
-						Console.WriteLine();
-						return; //continue;
-					}
+        static void Main(string[] args)
+        {
+            Patch.Init();
 
-					unsafe
-					{
-						handle.Cursor.VisitChildren((cursor, parent, clientData) =>
-						{
-							if (!cursor.Location.IsFromMainFile)
-								return CXChildVisitResult.CXChildVisit_Continue;
+            clang_command_args[2] += macosSDK;
+            clang_command_args[3] += clangIncludes;
+            clang_command_args[1] += macosVersion;
+            clang_command_args[4] += macosVersion;
 
-							if (cursor.Kind == CXCursorKind.CXCursor_ObjCProtocolDecl)
-							{
-								Type.NewProtocol(cursor.DisplayName.CString);
-							}
-							else if (cursor.Kind == CXCursorKind.CXCursor_ObjCInstanceMethodDecl)
-							{
-								var method = Method.New(cursor.DisplayName.CString);
-								{
-									Type type = Type.get(parent.DisplayName.CString);
-									type.addMethod(method);
-								}
-							}
-							else if (cursor.Kind == CXCursorKind.CXCursor_ObjCClassMethodDecl)
-							{
-								var method = Selector.New(cursor.DisplayName.CString);
-								try
-								{
-									Type type = Type.get(parent.DisplayName.CString);
-									type.addMethod(method);
-								}
-								catch (Exception e)
-								{
+            var unit = Parse();
+            ParseAST.Generate(unit.TranslationUnitDecl);
 
-								}
-							}
-							else if (cursor.Kind == CXCursorKind.CXCursor_TypeRef)
-							{
-								if (parent.Kind == CXCursorKind.CXCursor_ObjCInstanceMethodDecl)
-								{
-									var method = Method.get(parent.DisplayName.CString);
-									method.addReturnType(cursor.DisplayName.CString);
-								}
-								else if (parent.Kind == CXCursorKind.CXCursor_ParmDecl)
-								{
-									var method = Method.get(parent.ParentFunctionOrMethod.DisplayName.CString);
-									method.addParameterType(cursor.DisplayName.CString);
-								}
-							}
-							else if (cursor.Kind == CXCursorKind.CXCursor_ParmDecl)
-							{
-								var method = Method.get(parent.DisplayName.CString);
-								method.addParameter(cursor.DisplayName.CString);
-							}
-							else if (cursor.Kind == CXCursorKind.CXCursor_ObjCPropertyDecl)
-							{
-								var temp1 = parent.SemanticParent;
-								var temp2 = parent.ParentFunctionOrMethod;
-								var temp3 = parent.LexicalParent;
+            MetadataWriter.Write("macos_metadata");
+        }
 
-								var property = Property.New(cursor.DisplayName.CString, parent.DisplayName.CString);
-								var type = Type.get(parent.DisplayName.CString);
-							}
-							else if (cursor.Kind == CXCursorKind.CXCursor_ObjCCategoryDecl)
-							{
-							}
-							else
-							{
-								Console.WriteLine($"{cursor.Kind} | {cursor}");
-							}
+        static void PrintInfo()
+        {
+            using StreamWriter sw = File.CreateText("meta.cs");
 
-							return CXChildVisitResult.CXChildVisit_Recurse;
-						}, clientData: default);
-					}
-				}
-			}
+            Indent indent = new();
+            sw.WriteLine(indent.Format("namespace macos {{"));
+            indent++;
+            foreach (var framework in Framework.All)
+            {
+                foreach (var enumer in framework.Enums)
+                {
+                    sw.WriteLine(indent.Format("enum {0} {{", enumer.Name));
+                    indent++;
+                    foreach (var member in enumer.Members)
+                    {
+                        sw.WriteLine(indent.Format("{0},", member));
+                    }
+                    indent--;
+                    sw.WriteLine(indent.Format("}}"));
+                }
+                foreach (var protocol in framework.Protocols)
+                {
+                    if (protocol.ClassMethods.Count > 0)
+                    {
+                        sw.WriteLine(indent.Format("static class {0}_Static {{", protocol.Name));
+                        indent++;
 
-			var assemblyName = "macOS.dll";
+                        foreach (var method in protocol.ClassMethods)
+                        {
+                            sw.WriteLine(indent.Format(
+                                "{1} {0}({2});",
+                                method.Name,
+                                "void",
+                                string.Join(", ", method.Parameters.Select(r => $"{r.type} {r.name}"))
+                            ));
+                        }
 
-			MetadataBuilder metadataBuilder = new MetadataBuilder();
-			metadataBuilder.AddAssembly(metadataBuilder.GetOrAddString(assemblyName), new Version(1, 0, 0, 0), default, default, default, AssemblyHashAlgorithm.None);
+                        indent--;
+                        sw.WriteLine(indent.Format("}}"));
+                        sw.WriteLine(indent.Format("[StaticItems(\"{0}_Static\")]", protocol.Name));
+                    }
 
-			var moduleRef = metadataBuilder.AddModule(0, metadataBuilder.GetOrAddString(assemblyName), metadataBuilder.GetOrAddGuid(Guid.NewGuid()), default, default);
+                    sw.WriteLine(indent.Format("interface {0} {{", protocol.Name));
+                    indent++;
 
-			metadataBuilder.AddTypeDefinition(default, default, metadataBuilder.GetOrAddString("<Module>"), baseType: default(EntityHandle), fieldList: MetadataTokens.FieldDefinitionHandle(1), methodList: MetadataTokens.MethodDefinitionHandle(1));
+                    foreach (var method in protocol.InstanceMethods)
+                    {
+                        sw.WriteLine(indent.Format("[Selector(\"{0}\")]", method.Selector));
+                        sw.WriteLine(indent.Format(
+                            "{1} {0}({2});",
+                            method.Name,
+                            "void",
+                            string.Join(", ", method.Parameters.Select(r => $"{r.type} {r.name}"))
+                        ));
+                    }
 
+                    indent--;
+                    sw.WriteLine(indent.Format("}}"));
+                }
+            }
+            indent--;
+            sw.WriteLine(indent.Format("}}"));
+        }
+    }
 
-			var peBuilder = new ManagedPEBuilder(PEHeaderBuilder.CreateLibraryHeader(), new MetadataRootBuilder(metadataBuilder), ilStream: new BlobBuilder());
+    class Indent
+    {
+        int index;
 
-			var peBlob = new BlobBuilder();
-			peBuilder.Serialize(peBlob);
+        public static Indent operator ++(Indent i)
+        {
+            i.index++;
+            return i;
+        }
+        public static Indent operator --(Indent i)
+        {
+            i.index--;
+            return i;
+        }
 
-			using (FileStream fileStream = new FileStream(assemblyName, FileMode.Create, FileAccess.ReadWrite))
-			{
-				peBlob.WriteContentTo(fileStream);
-			}
-		}
-	}*/
-
-	class Program
-	{
-		static void Main(string[] args)
-		{
-			var macosSDK = "R:/MacOS/MacOS SDK/MacOSX10.15.sdk";
-
-			var reader = new Reader();
-
-			foreach (var framework in Directory.GetDirectories(macosSDK + @"/System/Library/Frameworks"))
-			{
-				if (!Directory.Exists(framework + @"/Headers"))
-					continue;
-
-				var nameStart = framework.LastIndexOfAny(new char[]{'/', '\\'}) + 1;
-				var name = framework.Substring(nameStart, framework.LastIndexOf('.') - nameStart);
-				reader.AddFramework(name);
-				Console.WriteLine($"{name}");
-
-				foreach (var filePath in Directory.GetFiles(framework + @"/Headers", "*.h"))
-				{
-					nameStart = filePath.LastIndexOfAny(new char[]{'/', '\\'}) + 1;
-					name = filePath.Substring(nameStart);
-					Console.WriteLine($"\t{name}");
-
-					reader.Run(new Parser(filePath));
-				}
-			}
-
-			new meta.Json.Serializer().Run(reader, "macos.json");
-		}
-	}
+        public override string ToString() => new('\t', index);
+        public string Format(string format, params object[] args) => ToString() + string.Format(format, args);
+    }
 }

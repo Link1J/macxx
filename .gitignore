@@ -2,5 +2,5 @@
 /.vscode
 .DS_Store
 /build*
-/meta/bin
-/meta/obj
+/meta*/bin
+/meta*/obj
